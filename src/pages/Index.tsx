@@ -254,30 +254,41 @@ const Index = () => {
                 size: "20 м²", 
                 price: "15 000", 
                 features: ["Теплица 4×5 м с автополивом", "Идеально для зелени и салатов", "Рассада весной — урожай летом", "Все инструменты на месте"], 
-                popular: false 
+                popular: false,
+                image: "https://cdn.poehali.dev/projects/d80de847-ec76-47df-9810-364313f6f372/files/4ba24fef-7d18-45f6-8fd6-fab507717fa1.jpg"
               },
               { 
                 name: "Комфорт", 
                 size: "35 м²", 
                 price: "24 000", 
                 features: ["Теплица 5×7 м с отоплением", "Овощи + зелень круглый год", "Выращивание рассады в теплице", "Приоритет на мастер-классах"], 
-                popular: true 
+                popular: true,
+                image: "https://cdn.poehali.dev/projects/d80de847-ec76-47df-9810-364313f6f372/files/dc0b3eb0-baf4-4c06-99c1-103ee7373a1b.jpg"
               },
               { 
                 name: "Премиум", 
                 size: "50 м²", 
                 price: "32 000", 
                 features: ["Теплица 6×8 м с умным управлением", "📱 Удалённый контроль полива", "🚚 Задание на сбор и доставку урожая", "VIP-поддержка агронома 24/7"], 
-                popular: false 
+                popular: false,
+                image: "https://cdn.poehali.dev/projects/d80de847-ec76-47df-9810-364313f6f372/files/e1e1e216-2c62-43e6-a441-82709f35f0d2.jpg"
               }
             ].map((plan, i) => (
-              <Card key={i} className={`animate-fade-in relative border-0 shadow-xl hover:shadow-2xl transition-all duration-300 ${plan.popular ? 'scale-105 bg-gradient-to-br from-emerald-600 to-green-600 text-white' : 'bg-white hover:-translate-y-2'}`}>
+              <Card key={i} className={`animate-fade-in relative border-0 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden ${plan.popular ? 'scale-105 bg-gradient-to-br from-emerald-600 to-green-600 text-white' : 'bg-white hover:-translate-y-2'}`}>
                 {plan.popular && (
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-6 py-2 rounded-full text-sm font-bold shadow-lg">
+                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-400 text-gray-900 px-6 py-2 rounded-full text-sm font-bold shadow-lg z-10">
                     ⭐ Популярный
                   </div>
                 )}
-                <CardContent className="pt-10 pb-10">
+                <div className="relative h-56 overflow-hidden">
+                  <img 
+                    src={plan.image} 
+                    alt={`Теплица ${plan.name}`} 
+                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className={`absolute inset-0 ${plan.popular ? 'bg-gradient-to-t from-emerald-600/90 to-transparent' : 'bg-gradient-to-t from-black/40 to-transparent'}`}></div>
+                </div>
+                <CardContent className="pt-8 pb-10">
                   <h3 className={`text-3xl font-bold text-center mb-2 ${plan.popular ? 'text-white' : 'text-gray-900'}`}>{plan.name}</h3>
                   <p className={`text-center mb-6 ${plan.popular ? 'text-emerald-100' : 'text-gray-600'}`}>{plan.size}</p>
                   <div className="text-center mb-8">
