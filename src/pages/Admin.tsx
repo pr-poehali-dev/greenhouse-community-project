@@ -3,7 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
 import * as XLSX from 'xlsx';
+import type { DateRange } from "react-day-picker";
 
 interface Application {
   id: number;
@@ -20,6 +25,7 @@ const Admin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
   const [authError, setAuthError] = useState("");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const fetchApplications = async () => {
     setIsLoading(true);
@@ -68,8 +74,24 @@ const Admin = () => {
     }
   };
 
+  const filteredApplications = applications.filter(app => {
+    if (!dateRange?.from) return true;
+    
+    const appDate = new Date(app.created_at);
+    const fromDate = new Date(dateRange.from);
+    fromDate.setHours(0, 0, 0, 0);
+    
+    if (dateRange.to) {
+      const toDate = new Date(dateRange.to);
+      toDate.setHours(23, 59, 59, 999);
+      return appDate >= fromDate && appDate <= toDate;
+    }
+    
+    return appDate >= fromDate;
+  });
+
   const handleExportToExcel = () => {
-    const exportData = applications.map(app => ({
+    const exportData = filteredApplications.map(app => ({
       'ID': app.id,
       'Дата и время': formatDate(app.created_at),
       'Имя': app.name,
@@ -83,6 +105,10 @@ const Admin = () => {
     
     const fileName = `заявки_${new Date().toISOString().split('T')[0]}.xlsx`;
     XLSX.writeFile(workbook, fileName);
+  };
+
+  const handleResetFilter = () => {
+    setDateRange(undefined);
   };
 
   const formatDate = (dateString: string) => {
@@ -147,30 +173,90 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 py-12 px-6">
       <div className="container mx-auto max-w-7xl">
-        <div className="flex items-center justify-between mb-12">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Админ-панель</h1>
-            <p className="text-gray-600">Управление заявками клиентов</p>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Админ-панель</h1>
+              <p className="text-gray-600">Управление заявками клиентов</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button 
+                onClick={handleExportToExcel}
+                disabled={isLoading || filteredApplications.length === 0}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Icon name="Download" size={18} />
+                Экспорт в Excel
+              </Button>
+              <Button 
+                onClick={fetchApplications}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <Icon name="RefreshCw" size={18} />
+                Обновить
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button 
-              onClick={handleExportToExcel}
-              disabled={isLoading || applications.length === 0}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <Icon name="Download" size={18} />
-              Экспорт в Excel
-            </Button>
-            <Button 
-              onClick={fetchApplications}
-              disabled={isLoading}
-              className="flex items-center gap-2"
-            >
-              <Icon name="RefreshCw" size={18} />
-              Обновить
-            </Button>
-          </div>
+
+          <Card className="shadow-lg border-emerald-200">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Icon name="Filter" size={20} className="text-emerald-600" />
+                  <span className="font-semibold text-gray-700">Фильтр по дате:</span>
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-[280px] justify-start text-left font-normal"
+                    >
+                      <Icon name="Calendar" size={16} className="mr-2" />
+                      {dateRange?.from ? (
+                        dateRange.to ? (
+                          <>
+                            {format(dateRange.from, "dd.MM.yyyy", { locale: ru })} -{" "}
+                            {format(dateRange.to, "dd.MM.yyyy", { locale: ru })}
+                          </>
+                        ) : (
+                          format(dateRange.from, "dd.MM.yyyy", { locale: ru })
+                        )
+                      ) : (
+                        <span>Выберите диапазон дат</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      initialFocus
+                      mode="range"
+                      defaultMonth={dateRange?.from}
+                      selected={dateRange}
+                      onSelect={setDateRange}
+                      numberOfMonths={2}
+                      locale={ru}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {dateRange?.from && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetFilter}
+                    className="flex items-center gap-2"
+                  >
+                    <Icon name="X" size={16} />
+                    Сбросить
+                  </Button>
+                )}
+                <div className="ml-auto text-sm text-gray-600">
+                  Показано: <span className="font-semibold text-emerald-600">{filteredApplications.length}</span> из {applications.length}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {error && (
@@ -188,7 +274,7 @@ const Admin = () => {
           <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white">
             <CardTitle className="flex items-center gap-3 text-2xl">
               <Icon name="FileText" size={28} />
-              Все заявки ({applications.length})
+              Заявки ({filteredApplications.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -199,10 +285,12 @@ const Admin = () => {
                   <p className="text-gray-600">Загрузка заявок...</p>
                 </div>
               </div>
-            ) : applications.length === 0 ? (
+            ) : filteredApplications.length === 0 ? (
               <div className="text-center py-20">
                 <Icon name="Inbox" size={64} className="text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg">Заявок пока нет</p>
+                <p className="text-gray-500 text-lg">
+                  {dateRange?.from ? "Заявок в выбранном диапазоне нет" : "Заявок пока нет"}
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -217,7 +305,7 @@ const Admin = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
-                    {applications.map((app) => (
+                    {filteredApplications.map((app) => (
                       <tr key={app.id} className="hover:bg-emerald-50/50 transition-colors">
                         <td className="px-6 py-4 text-sm text-gray-900 font-medium">#{app.id}</td>
                         <td className="px-6 py-4 text-sm text-gray-600">
