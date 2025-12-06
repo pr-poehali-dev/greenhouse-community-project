@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Icon from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import * as XLSX from 'xlsx';
 
 interface Application {
   id: number;
@@ -15,6 +17,9 @@ const Admin = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authError, setAuthError] = useState("");
 
   const fetchApplications = async () => {
     setIsLoading(true);
@@ -37,8 +42,48 @@ const Admin = () => {
   };
 
   useEffect(() => {
-    fetchApplications();
+    const savedAuth = sessionStorage.getItem('admin_auth');
+    if (savedAuth === 'true') {
+      setIsAuthenticated(true);
+      fetchApplications();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      sessionStorage.setItem('admin_auth', 'true');
+    }
+  }, [isAuthenticated]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === "520129") {
+      setIsAuthenticated(true);
+      setAuthError("");
+      fetchApplications();
+    } else {
+      setAuthError("Неверный пароль");
+    }
+  };
+
+  const handleExportToExcel = () => {
+    const exportData = applications.map(app => ({
+      'ID': app.id,
+      'Дата и время': formatDate(app.created_at),
+      'Имя': app.name,
+      'Телефон': app.phone,
+      'Email': app.email
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Заявки');
+    
+    const fileName = `заявки_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -51,6 +96,54 @@ const Admin = () => {
     });
   };
 
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 flex items-center justify-center px-6">
+        <Card className="w-full max-w-md shadow-2xl border-0">
+          <CardHeader className="bg-gradient-to-r from-emerald-600 to-green-600 text-white">
+            <CardTitle className="text-2xl flex items-center gap-3">
+              <Icon name="Lock" size={28} />
+              Вход в админ-панель
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-8 pb-8">
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div>
+                <label className="block text-sm font-semibold mb-3 text-gray-700">Пароль</label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Введите пароль"
+                  className="text-lg"
+                  autoFocus
+                />
+                {authError && (
+                  <p className="text-red-600 text-sm mt-2 flex items-center gap-2">
+                    <Icon name="AlertCircle" size={16} />
+                    {authError}
+                  </p>
+                )}
+              </div>
+              <Button type="submit" className="w-full h-12 text-lg">
+                Войти
+              </Button>
+            </form>
+            <div className="mt-6 text-center">
+              <a 
+                href="/" 
+                className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-medium transition-colors text-sm"
+              >
+                <Icon name="ArrowLeft" size={16} />
+                Вернуться на главную
+              </a>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-green-50 py-12 px-6">
       <div className="container mx-auto max-w-7xl">
@@ -59,14 +152,25 @@ const Admin = () => {
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Админ-панель</h1>
             <p className="text-gray-600">Управление заявками клиентов</p>
           </div>
-          <Button 
-            onClick={fetchApplications}
-            disabled={isLoading}
-            className="flex items-center gap-2"
-          >
-            <Icon name="RefreshCw" size={18} />
-            Обновить
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button 
+              onClick={handleExportToExcel}
+              disabled={isLoading || applications.length === 0}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Icon name="Download" size={18} />
+              Экспорт в Excel
+            </Button>
+            <Button 
+              onClick={fetchApplications}
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <Icon name="RefreshCw" size={18} />
+              Обновить
+            </Button>
+          </div>
         </div>
 
         {error && (
