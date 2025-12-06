@@ -6,11 +6,34 @@ import { useState } from "react";
 
 const Index = () => {
   const [formData, setFormData] = useState({ name: "", phone: "", email: "" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Спасибо за заявку! Мы свяжемся с вами в ближайшее время.");
-    setFormData({ name: "", phone: "", email: "" });
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('https://functions.poehali.dev/5bad7feb-b309-4bad-ad1d-d35d49ce9e67', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("Спасибо за заявку! Мы свяжемся с вами в ближайшее время.");
+        setFormData({ name: "", phone: "", email: "" });
+      } else {
+        alert(result.error || "Произошла ошибка при отправке заявки");
+      }
+    } catch (error) {
+      alert("Ошибка соединения. Пожалуйста, попробуйте позже.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -393,8 +416,12 @@ const Index = () => {
                       placeholder="ivan@example.com"
                     />
                   </div>
-                  <Button type="submit" className="w-full h-14 text-lg shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all">
-                    Отправить заявку
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full h-14 text-lg shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 transition-all disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Отправка..." : "Отправить заявку"}
                   </Button>
                 </form>
               </CardContent>
