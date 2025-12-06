@@ -45,7 +45,7 @@ export const HeroSection = () => {
           <div className="animate-scale-in relative">
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 to-green-600 rounded-3xl blur-3xl opacity-20"></div>
             <img
-              src="https://images.unsplash.com/photo-1592419044706-39796d40f98c?w=800&q=80"
+              src="https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?w=800&q=80"
               alt="Счастливая женщина с первым урожаем в теплице"
               className="relative rounded-3xl shadow-2xl w-full h-auto ring-1 ring-gray-900/5"
             />
